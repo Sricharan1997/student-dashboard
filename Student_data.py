@@ -7,7 +7,7 @@ import os
 # CONFIG
 # =========================
 st.set_page_config(
-    page_title="Student Performance Dashboard",
+    page_title="EduMetrics Dashboard",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -15,7 +15,7 @@ st.set_page_config(
 # =========================
 # PATHS (Relative for GitHub/Streamlit Cloud)
 # =========================
-DATA_PATH = "data/student_data2.csv"  # Place CSV inside repo in 'data' folder
+DATA_PATH = "data/student_data2.csv"  # CSV inside repo in 'data' folder
 
 # =========================
 # LOAD DATA
@@ -47,7 +47,7 @@ st.sidebar.title("🎛 Filters")
 if st.sidebar.button("🔄 Reset Filters"):
     st.experimental_rerun()
 
-subject = st.sidebar.selectbox("Subject", subjects + ["Average_Score"])
+subject = st.sidebar.selectbox("Select Subject", subjects + ["Average_Score"])
 grades = st.sidebar.multiselect("Grade", df["Grade"].unique(), df["Grade"].unique())
 attendance = st.sidebar.multiselect(
     "Attendance Level",
@@ -63,7 +63,7 @@ filtered = df[
 # =========================
 # KPI METRICS
 # =========================
-st.title("📊 Student Performance Dashboard")
+st.title("🎓 EduMetrics Dashboard")
 
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("👨‍🎓 Students", len(filtered))
@@ -76,7 +76,7 @@ st.divider()
 # =========================
 # TABS
 # =========================
-tab1, tab2, tab3 = st.tabs(["📌 Overview", "📈 Analysis", "🔗 Correlation"])
+tab1, tab2, tab3, tab4 = st.tabs(["📌 Overview", "📈 Analysis", "🔗 Correlation", "💡 Insights"])
 
 # =========================
 # OVERVIEW TAB
@@ -136,10 +136,7 @@ with tab2:
         text_auto=True,
         title="Top 10 Students"
     )
-    fig4.update_layout(
-        dragmode="zoom",
-        hovermode="closest"
-    )
+    fig4.update_layout(dragmode="zoom", hovermode="closest")
     st.plotly_chart(fig4, use_container_width=True)
 
 # =========================
@@ -156,12 +153,27 @@ with tab3:
     st.plotly_chart(fig5, use_container_width=True)
 
 # =========================
-# DATA TABLE & DOWNLOAD
+# INSIGHTS TAB WITH CONDITIONAL FORMATTING
 # =========================
-with st.expander("📄 View & Download Data"):
-    st.dataframe(filtered, use_container_width=True)
-    
-    csv = filtered.to_csv(index=False).encode('utf-8')
+with tab4:
+    st.markdown("### 💡 Key Insights")
+    st.write("- High attendance correlates with higher scores.")
+    st.write("- Most students achieve B and C grades.")
+    st.write("- Top performers consistently score ≥90.")
+
+    # Conditional formatting function
+    def highlight_students(row):
+        if row["Average_Score"] < 70 and row["Attendance"] < 85:
+            return ["background-color: #ff4d4d"] * len(row)  # Red for risk
+        elif row["Average_Score"] >= 90:
+            return ["background-color: #4dff4d"] * len(row)  # Green for top performers
+        else:
+            return ["background-color: #fffacd"] * len(row)  # Light yellow for average
+
+    st.markdown("### ⚠️ Students at Risk & 🌟 Top Performers")
+    st.dataframe(filtered.style.apply(highlight_students, axis=1), use_container_width=True)
+
+    csv = filtered.to_csv(index=False).encode("utf-8")
     st.download_button(
         "📥 Download Filtered Data",
         data=csv,
