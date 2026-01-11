@@ -12,8 +12,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-BASE_DIR = r"C:\Users\thota\OneDrive\Documents\Students_performance_Analysis"
-DATA_PATH = os.path.join(BASE_DIR, "data", "student_data2.csv")
+# =========================
+# PATHS (Relative for GitHub/Streamlit Cloud)
+# =========================
+DATA_PATH = "data/student_data2.csv"  # Place CSV inside repo in 'data' folder
 
 # =========================
 # LOAD DATA
@@ -38,7 +40,7 @@ df["Attendance_Level"] = pd.cut(
 )
 
 # =========================
-# SIDEBAR
+# SIDEBAR FILTERS
 # =========================
 st.sidebar.title("🎛 Filters")
 
@@ -64,7 +66,6 @@ filtered = df[
 st.title("📊 Student Performance Dashboard")
 
 col1, col2, col3, col4 = st.columns(4)
-
 col1.metric("👨‍🎓 Students", len(filtered))
 col2.metric("📈 Avg Score", round(filtered["Average_Score"].mean(), 2))
 col3.metric("🏆 Top Score", filtered["Average_Score"].max())
@@ -89,7 +90,11 @@ with tab1:
         hover_data=["Name", "Grade"],
         range_x=[0, 100]
     )
-    fig.update_layout(dragmode="zoom")
+    fig.update_layout(
+        dragmode="zoom",
+        hovermode="closest",
+        legend=dict(itemclick="toggleothers")
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     fig2 = px.pie(
@@ -98,6 +103,7 @@ with tab1:
         title="Grade Distribution",
         hole=0.4
     )
+    fig2.update_traces(textposition="inside", textinfo="percent+label")
     st.plotly_chart(fig2, use_container_width=True)
 
 # =========================
@@ -115,6 +121,11 @@ with tab2:
         range_y=[0, 100],
         title="Attendance vs Performance"
     )
+    fig3.update_layout(
+        dragmode="zoom",
+        hovermode="closest",
+        legend=dict(itemclick="toggleothers")
+    )
     st.plotly_chart(fig3, use_container_width=True)
 
     top = filtered.sort_values("Average_Score", ascending=False).head(10)
@@ -124,6 +135,10 @@ with tab2:
         y="Average_Score",
         text_auto=True,
         title="Top 10 Students"
+    )
+    fig4.update_layout(
+        dragmode="zoom",
+        hovermode="closest"
     )
     st.plotly_chart(fig4, use_container_width=True)
 
@@ -141,9 +156,17 @@ with tab3:
     st.plotly_chart(fig5, use_container_width=True)
 
 # =========================
-# DATA TABLE
+# DATA TABLE & DOWNLOAD
 # =========================
-with st.expander("📄 View Data"):
+with st.expander("📄 View & Download Data"):
     st.dataframe(filtered, use_container_width=True)
+    
+    csv = filtered.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        "📥 Download Filtered Data",
+        data=csv,
+        file_name="filtered_students.csv",
+        mime="text/csv"
+    )
 
 st.success("✅ Dashboard optimized and ready!")
